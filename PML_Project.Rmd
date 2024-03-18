@@ -1,0 +1,119 @@
+---
+title: "project"
+author: "Muhammad Yaqoob"
+date: "2024-03-17"
+output: html_document
+---
+## loading data after removing variables with missing values
+```{r setup, include=FALSE}
+
+pml_training<- read.csv(file.choose(), header = T, sep = (","))
+```
+
+##To check the straructure of the dataset
+```{r}
+
+str(pml_training)
+```
+# to check missing values in the dataset
+```{r}
+anyNA(pml_training)
+
+
+```
+
+
+### convert outcome variable (classe) into factor
+```{r}
+pml_training$classe<-as.factor(pml_training$classe)
+
+```
+
+### Applying classification and regression tree with 10 fold ### crossvalidation.
+
+```{r}
+#specify the cross-validation method
+library(caret)
+set.seed(123)
+ctrl <- trainControl(method = "cv", number = 10)
+
+#fit a classification model and use 10-fold CV to evaluate performance
+model1 <- train(classe ~., data = pml_training, method = "rpart", trControl = ctrl)
+
+print(model1)
+```
+
+
+```{r}
+varImp(model1)
+
+```
+### According to variable impotrance table, only 10 variable are contributing for classification
+## Now we select 10 important feature for model fitting
+
+```{r}
+features <- pml_training[, c("pitch_forearm", "roll_forearm",                 "roll_belt","magnet_dumbbell_y","accel_belt_z",                "magnet_belt_y","yaw_belt","num_window",                       "raw_timestamp_part_1","total_accel_belt")]
+classe<- pml_training$classe
+training<- data.frame(classe, features)
+str(training)
+
+```
+## use 10 fold cross-validation for for fitting models
+
+
+```{r}
+#specify the cross-validation method
+set.seed(123)
+ctrl <- trainControl(method = "cv", number = 10)
+
+```
+### Fitting cart model
+
+```{r}
+set.seed(123)
+mod1 <- train(classe ~., data = training, method = "rpart", trControl = ctrl)
+print(mod1)
+
+```
+## Fitting Generalized boosted modeling 
+
+```{r}
+set.seed(123)
+library(gbm)
+mod2<- train(classe~., method="gbm",trControl = ctrl, data=training)
+
+```
+## Show results
+```{r}
+print(mod2)
+
+```
+
+##Fitting Random Forest Model
+
+```{r}
+set.seed(123)
+mod3<- train(classe~., method="rf", data=training, 
+             trControl = ctrl)
+print(mod3)
+```
+
+
+
+### Fitting Linear Discrimination Model
+```{r}
+set.seed(123)
+mod4<- train(classe~., method="lda",trControl = ctrl, data=training)
+print(mod4)
+
+```
+## Summary
+
+I apply 4 different machine learning methods with 10 fold cross validation, namely classification and regression trees, generalized boosting modeling, random forest. Random forest and generalized boosting methods were outperformed with 99% of accuracy and kappa. On the other hand, performance of classification & regression trees and linear discrimination analysis were poor for predicting classe with highest kappa value of 0.38 and 0.28 respectively.
+
+
+
+```{r}
+
+```
+
